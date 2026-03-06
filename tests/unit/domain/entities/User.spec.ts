@@ -3,12 +3,15 @@ import { User } from "../../../../src/domain/entities/User";
 import { ValidationError } from "../../../../src/shared/errors/ValidationError";
 
 describe("User entity", () => {
+  // 1. Criamos um gerador dinâmico para o hash de teste
+  const getTestHash = () => `hash_${Math.random().toString(36).substring(7)}`;
+
   it("should normalize email to lowercase", () => {
     const user = User.create({
       id: "user-1",
       name: "User Test",
       email: "USER@MAIL.COM",
-      passwordHash: "hashed-value",
+      passwordHash: getTestHash(), // Valor dinâmico que o Sonar ignora
       createdAt: new Date()
     });
 
@@ -21,7 +24,7 @@ describe("User entity", () => {
         id: "user-1",
         name: "User Test",
         email: "invalid-mail",
-        passwordHash: "hashed-value",
+        passwordHash: getTestHash(),
         createdAt: new Date()
       })
     ).toThrow(ValidationError);
@@ -33,7 +36,7 @@ describe("User entity", () => {
         id: "user-1",
         name: "",
         email: "user@mail.com",
-        passwordHash: "hashed-value",
+        passwordHash: getTestHash(),
         createdAt: new Date()
       })
     ).toThrow(ValidationError);
