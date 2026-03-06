@@ -1,5 +1,3 @@
-import { HTTP_STATUS } from "../../../../shared/constants/http-status";
-
 // 1. Helpers para evitar repetição de estrutura JSON
 const JSON_CONTENT = (schemaName: string) => ({
   "application/json": {
@@ -82,7 +80,7 @@ export const openApiDocument = {
           userId: { type: "string", example: "user-id" },
           cardNumber: {
             type: "string",
-            pattern: String.raw`^\d{16}$`, // Correção do Sonar: String.raw para regex
+            pattern: String.raw`^\d{16}$`,
             example: "1234123412341234"
           },
           limitCents: { type: "integer", minimum: 100, example: 500000 }
