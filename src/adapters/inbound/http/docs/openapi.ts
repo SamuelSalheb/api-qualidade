@@ -1,3 +1,32 @@
+import { HTTP_STATUS } from "../../../../shared/constants/http-status";
+
+// 1. Helpers para evitar repetição de estrutura JSON
+const JSON_CONTENT = (schemaName: string) => ({
+  "application/json": {
+    schema: { $ref: `#/components/schemas/${schemaName}` }
+  }
+});
+
+// 2. Parâmetros reutilizáveis
+const TRANSACTION_ID_PARAM = {
+  name: "transactionId",
+  in: "path",
+  required: true,
+  schema: { type: "string" }
+};
+
+// 3. Respostas de erro padronizadas
+const COMMON_ERRORS = {
+  VALIDATION: {
+    description: "Erro de validacao",
+    content: JSON_CONTENT("ErrorResponse")
+  },
+  NOT_FOUND: {
+    description: "Recurso nao encontrado",
+    content: JSON_CONTENT("ErrorResponse")
+  }
+};
+
 export const openApiDocument = {
   openapi: "3.0.3",
   info: {
@@ -5,12 +34,7 @@ export const openApiDocument = {
     version: "1.0.0",
     description: "API para processamento de transacoes financeiras com arquitetura hexagonal"
   },
-  servers: [
-    {
-      url: "/api",
-      description: "Base path local"
-    }
-  ],
+  servers: [{ url: "/api", description: "Base path local" }],
   tags: [
     { name: "Users" },
     { name: "Cards" },
@@ -56,7 +80,11 @@ export const openApiDocument = {
         type: "object",
         properties: {
           userId: { type: "string", example: "user-id" },
-          cardNumber: { type: "string", pattern: "^\\d{16}$", example: "1234123412341234" },
+          cardNumber: {
+            type: "string",
+            pattern: String.raw`^\d{16}$`, // Correção do Sonar: String.raw para regex
+            example: "1234123412341234"
+          },
           limitCents: { type: "integer", minimum: 100, example: 500000 }
         },
         required: ["userId", "cardNumber", "limitCents"]
@@ -101,16 +129,7 @@ export const openApiDocument = {
           cancelledAt: { type: "string", format: "date-time", nullable: true },
           chargebackAt: { type: "string", format: "date-time", nullable: true }
         },
-        required: [
-          "id",
-          "cardId",
-          "userId",
-          "amountCents",
-          "description",
-          "status",
-          "referenceMonth",
-          "createdAt"
-        ]
+        required: ["id", "cardId", "userId", "amountCents", "description", "status", "referenceMonth", "createdAt"]
       },
       InvoiceResponse: {
         type: "object",
@@ -132,33 +151,10 @@ export const openApiDocument = {
       post: {
         tags: ["Users"],
         summary: "Criar usuario",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/CreateUserRequest"
-              }
-            }
-          }
-        },
+        requestBody: { required: true, content: JSON_CONTENT("CreateUserRequest") },
         responses: {
-          "201": {
-            description: "Usuario criado",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/UserResponse" }
-              }
-            }
-          },
-          "400": {
-            description: "Erro de validacao",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/ErrorResponse" }
-              }
-            }
-          }
+          "201": { description: "Usuario criado", content: JSON_CONTENT("UserResponse") },
+          "400": COMMON_ERRORS.VALIDATION
         }
       }
     },
@@ -166,33 +162,10 @@ export const openApiDocument = {
       post: {
         tags: ["Cards"],
         summary: "Criar cartao",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/CreateCardRequest"
-              }
-            }
-          }
-        },
+        requestBody: { required: true, content: JSON_CONTENT("CreateCardRequest") },
         responses: {
-          "201": {
-            description: "Cartao criado",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/CardResponse" }
-              }
-            }
-          },
-          "404": {
-            description: "Usuario nao encontrado",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/ErrorResponse" }
-              }
-            }
-          }
+          "201": { description: "Cartao criado", content: JSON_CONTENT("CardResponse") },
+          "404": COMMON_ERRORS.NOT_FOUND
         }
       }
     },
@@ -200,25 +173,9 @@ export const openApiDocument = {
       post: {
         tags: ["Transactions"],
         summary: "Processar transacao",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/ProcessTransactionRequest"
-              }
-            }
-          }
-        },
+        requestBody: { required: true, content: JSON_CONTENT("ProcessTransactionRequest") },
         responses: {
-          "201": {
-            description: "Transacao processada",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/TransactionResponse" }
-              }
-            }
-          }
+          "201": { description: "Transacao processada", content: JSON_CONTENT("TransactionResponse") }
         }
       }
     },
@@ -226,23 +183,9 @@ export const openApiDocument = {
       post: {
         tags: ["Transactions"],
         summary: "Cancelar transacao",
-        parameters: [
-          {
-            name: "transactionId",
-            in: "path",
-            required: true,
-            schema: { type: "string" }
-          }
-        ],
+        parameters: [TRANSACTION_ID_PARAM],
         responses: {
-          "200": {
-            description: "Transacao cancelada",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/TransactionResponse" }
-              }
-            }
-          }
+          "200": { description: "Transacao cancelada", content: JSON_CONTENT("TransactionResponse") }
         }
       }
     },
@@ -250,23 +193,9 @@ export const openApiDocument = {
       post: {
         tags: ["Transactions"],
         summary: "Simular chargeback",
-        parameters: [
-          {
-            name: "transactionId",
-            in: "path",
-            required: true,
-            schema: { type: "string" }
-          }
-        ],
+        parameters: [TRANSACTION_ID_PARAM],
         responses: {
-          "200": {
-            description: "Chargeback aplicado",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/TransactionResponse" }
-              }
-            }
-          }
+          "200": { description: "Chargeback aplicado", content: JSON_CONTENT("TransactionResponse") }
         }
       }
     },
@@ -275,28 +204,11 @@ export const openApiDocument = {
         tags: ["Invoices"],
         summary: "Gerar ou consultar fatura mensal",
         parameters: [
-          {
-            name: "cardId",
-            in: "path",
-            required: true,
-            schema: { type: "string" }
-          },
-          {
-            name: "referenceMonth",
-            in: "query",
-            required: true,
-            schema: { type: "string", example: "2026-03" }
-          }
+          { name: "cardId", in: "path", required: true, schema: { type: "string" } },
+          { name: "referenceMonth", in: "query", required: true, schema: { type: "string", example: "2026-03" } }
         ],
         responses: {
-          "200": {
-            description: "Fatura do mes",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/InvoiceResponse" }
-              }
-            }
-          }
+          "200": { description: "Fatura do mes", content: JSON_CONTENT("InvoiceResponse") }
         }
       }
     }

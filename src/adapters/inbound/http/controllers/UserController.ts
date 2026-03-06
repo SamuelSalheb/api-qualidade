@@ -3,7 +3,7 @@ import { HTTP_STATUS } from "../../../../shared/constants/http-status";
 import type { CreateUserUseCase } from "../../../../application/use-cases/CreateUserUseCase";
 
 export class UserController {
-  constructor(private readonly createUserUseCase: CreateUserUseCase) {}
+  constructor(private readonly createUserUseCase: CreateUserUseCase) { }
 
   public async create(request: Request, response: Response): Promise<void> {
     const user = await this.createUserUseCase.execute({
@@ -12,8 +12,8 @@ export class UserController {
       password: String(request.body.password ?? "")
     });
 
-    const { passwordHash, ...safeUser } = user.toJSON();
-    void passwordHash;
+    // Usamos o padrão de underline (_) para indicar uma variável ignorada
+    const { passwordHash: _, ...safeUser } = user.toJSON();
 
     response.status(HTTP_STATUS.CREATED).json(safeUser);
   }

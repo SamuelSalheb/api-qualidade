@@ -13,7 +13,7 @@ export class CreateUserUseCase {
     private readonly userRepository: UserRepository,
     private readonly passwordHasher: PasswordHasher,
     private readonly idGenerator: IdGenerator
-  ) {}
+  ) { }
 
   public async execute(input: CreateUserInputDto): Promise<User> {
     assertNonEmptyString(input.name, "name");
@@ -25,8 +25,8 @@ export class CreateUserUseCase {
     }
 
     const existingUser = await this.userRepository.findByEmail(input.email);
-    const shouldCreateUser = existingUser ? false : true;
-    if (!shouldCreateUser) {
+
+    if (existingUser) {
       throw new BusinessRuleError("User with this email already exists");
     }
 
