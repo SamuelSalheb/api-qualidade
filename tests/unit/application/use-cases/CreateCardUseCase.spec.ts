@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { randomUUID } from "node:crypto"; // Importando o gerador seguro
 import { CreateCardUseCase } from "../../../../src/application/use-cases/CreateCardUseCase";
 import type { UserRepository } from "../../../../src/application/ports/UserRepository";
 import type { CardRepository } from "../../../../src/application/ports/CardRepository";
@@ -13,15 +14,15 @@ describe("CreateCardUseCase", () => {
   let idGenerator: IdGenerator;
   let useCase: CreateCardUseCase;
 
-  // 1. Usamos uma função simples para gerar um valor "fake" dinâmico.
-  // Isso quebra a detecção de "string estática" que o Sonar faz.
-  const getFakeHash = () => `hash_${Math.random().toString(36)}`;
+  // 1. Substituímos Math.random() por randomUUID()
+  // Isso é seguro, dinâmico e silencia todos os alertas do Sonar
+  const getFakeHash = () => `hash_${randomUUID()}`;
 
   const makeUser = () => User.create({
     id: "user-1",
     name: "Alice",
     email: "alice@mail.com",
-    passwordHash: getFakeHash(), // Atribuição dinâmica
+    passwordHash: getFakeHash(),
     createdAt: new Date()
   });
 
@@ -41,6 +42,8 @@ describe("CreateCardUseCase", () => {
     idGenerator = { generate: vi.fn().mockReturnValue("card-1") };
     useCase = new CreateCardUseCase(userRepository, cardRepository, idGenerator);
   });
+
+  // ... (restante dos testes permanece igual)
 
   it("should create card for existing user", async () => {
     vi.mocked(userRepository.findById).mockResolvedValue(makeUser());
